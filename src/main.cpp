@@ -429,6 +429,16 @@ void Input()
 
 				break;
 
+			case(SDL_SCANCODE_A):
+				isBackPressed = true;
+
+				break;
+
+			case (SDL_SCANCODE_D):
+				isForwardPressed = true;
+
+				break;
+
 			case(SDL_SCANCODE_SPACE):
 				isShootPressed = true;
 
@@ -449,6 +459,16 @@ void Input()
 
 			case (SDL_SCANCODE_S):
 				isDownPressed = false;
+
+				break;
+
+			case (SDL_SCANCODE_A):
+				isBackPressed = false;
+
+				break;
+
+			case(SDL_SCANCODE_D):
+				isForwardPressed = false;
 
 				break;
 
@@ -479,12 +499,12 @@ void Update()
 	}
 	if (isForwardPressed)
 	{
-		renderUserPlayer.dst.x -= playerSpeedPx / FPS;
+		renderUserPlayer.dst.x += playerSpeedPx / FPS;
 
 	}
 	if (isBackPressed)
 	{
-		renderUserPlayer.dst.x += playerSpeedPx * deltaTime;
+		renderUserPlayer.dst.x -= playerSpeedPx * deltaTime;
 
 	}
 	if (isShootPressed)
