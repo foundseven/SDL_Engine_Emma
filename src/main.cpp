@@ -10,7 +10,7 @@ constexpr float FPS = 60.0f; // target frames per second
 constexpr float DELAY_TIME = 1000.0f / FPS; // target time between frames in ms
 const int WINDOW_WIDTH = 1200;
 const int WINDOW_HEIGHT = 600;
-
+float deltaTime = 1.0f / FPS;
 
 bool isGameRunning = true;
 
@@ -401,18 +401,98 @@ void load()
 
 }
 
-
-
-
+bool isUpPressed = false;
+bool isDownPressed = false;
+bool isShootPressed = false;
+bool isForwardPressed = false;
+bool isBackPressed = false;
+float playerSpeedPx = 600.0f;
 
 void Input()
 {
+	SDL_Event event;
+	while (SDL_PollEvent(&event))
+	{
+		switch (event.type)
+		{
+		case (SDL_KEYDOWN):
+			
+			switch (event.key.keysym.scancode)
+			{
+			case (SDL_SCANCODE_W):
+				isUpPressed = true;
+
+				break;
+
+			case(SDL_SCANCODE_S):
+				isDownPressed = true;
+
+				break;
+
+			case(SDL_SCANCODE_SPACE):
+				isShootPressed = true;
+
+				break;
+			}
+			break;
+		}
+		
+		switch (event.type)
+		{
+		case(SDL_KEYUP):
+			switch (event.key.keysym.scancode)
+			{
+			case(SDL_SCANCODE_W):
+				isUpPressed = false;
+
+				break;
+
+			case (SDL_SCANCODE_S):
+				isDownPressed = false;
+
+				break;
+
+			case (SDL_SCANCODE_SPACE):
+				isShootPressed = false;
+
+				break;
+			}
+		}
+	}
+
+
 
 }
 
 
 void Update()
 {
+
+	if (isUpPressed)
+	{
+		renderUserPlayer.dst.y -= playerSpeedPx / FPS;
+	}
+	if (isDownPressed)
+	{
+		renderUserPlayer.dst.y += playerSpeedPx * deltaTime;
+
+	}
+	if (isForwardPressed)
+	{
+		renderUserPlayer.dst.x -= playerSpeedPx / FPS;
+
+	}
+	if (isBackPressed)
+	{
+		renderUserPlayer.dst.x += playerSpeedPx * deltaTime;
+
+	}
+	if (isShootPressed)
+	{
+		renderAmmo.dst.x;
+		renderAmmo.dst.y + enemy1.dst.w / 2;
+	}
+
 	//making the enemy move 
 	enemy1.dst.x = enemy1.dst.x - 1;
 
