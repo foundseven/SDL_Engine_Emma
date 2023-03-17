@@ -4,13 +4,14 @@
 #include <Windows.h>
 #include <SDL.h>
 #include <SDL_image.h>
+#include <vector>
 
 //Global variables are accessible from any context 
 constexpr float FPS = 60.0f; // target frames per second
 constexpr float DELAY_TIME = 1000.0f / FPS; // target time between frames in ms
 const int WINDOW_WIDTH = 1200;
 const int WINDOW_HEIGHT = 600;
-float deltaTime = 1.0f / FPS;
+float deltaTime = 1.0f / FPS;x
 
 bool isGameRunning = true;
 
@@ -401,12 +402,17 @@ void load()
 
 }
 
+
+// player input variables
 bool isUpPressed = false;
 bool isDownPressed = false;
 bool isShootPressed = false;
 bool isForwardPressed = false;
 bool isBackPressed = false;
-float playerSpeedPx = 600.0f;
+const float playerSpeedPx = 600.0f; //pixels per second
+const float playerShootCoolDownDuration = 0.5f; // time between shots
+float playerShootCoolDownTimer = 0.0f; //determines when we can shoot again
+
 
 void Input()
 {
@@ -509,9 +515,28 @@ void Update()
 	}
 	if (isShootPressed)
 	{
-		renderAmmo.dst.x;
-		renderAmmo.dst.y + enemy1.dst.w / 2;
+		//if player is off cooldown
+		if (playerShootCoolDownTimer <= 0.0f)
+		{
+			std::cout << "Shoot!" << std::endl;
+
+			renderAmmo.dst.x = renderUserPlayer.dst.x + renderUserPlayer.dst.h - renderAmmo.dst.w;
+			renderAmmo.dst.y = renderUserPlayer.dst.y + renderUserPlayer.dst.w/2;
+
+			//reset cool down timer
+			playerShootCoolDownTimer = playerShootCoolDownDuration;
+
+		}
+
+
 	}
+	
+	//tick down shoot cooldown
+	playerShootCoolDownTimer -= deltaTime;
+
+	//move bullet
+	renderAmmo.dst.x += 5;
+
 
 	//width
 	if (renderUserPlayer.dst.x >= WINDOW_WIDTH - renderUserPlayer.dst.w)
@@ -548,8 +573,7 @@ void Update()
 	//making the enemy move 
 	enemy1.dst.x = enemy1.dst.x - 1;
 
-	//making the ammo move 
-	renderAmmo.dst.x = renderAmmo.dst.x + 4;
+
 }
 
 void Draw()
