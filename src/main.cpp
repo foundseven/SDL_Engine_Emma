@@ -513,6 +513,38 @@ void Update()
 		renderAmmo.dst.y + enemy1.dst.w / 2;
 	}
 
+	//width
+	if (renderUserPlayer.dst.x >= WINDOW_WIDTH - renderUserPlayer.dst.w)
+	{
+		renderUserPlayer.dst.x = WINDOW_WIDTH - renderUserPlayer.dst.w;
+	}
+
+	if (renderUserPlayer.dst.x <= WINDOW_WIDTH * 0)
+	{
+		renderUserPlayer.dst.x = (WINDOW_HEIGHT * 0);
+	}
+
+	if (renderUserPlayer.dst.x <= 0 + 10)
+	{
+		renderUserPlayer.dst.x = 10;
+	}
+
+	//height
+	if (renderUserPlayer.dst.y >= WINDOW_HEIGHT - renderUserPlayer.dst.h)
+	{
+		renderUserPlayer.dst.y = WINDOW_HEIGHT - renderUserPlayer.dst.h;
+	}
+
+	if (renderUserPlayer.dst.y <= WINDOW_HEIGHT * 0)
+	{
+		renderUserPlayer.dst.y = (WINDOW_HEIGHT * 0);
+	}
+
+	if (renderUserPlayer.dst.y <= 0 + 10)
+	{
+		renderUserPlayer.dst.y = 10;
+	}
+
 	//making the enemy move 
 	enemy1.dst.x = enemy1.dst.x - 1;
 
