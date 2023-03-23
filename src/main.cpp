@@ -103,7 +103,7 @@ struct sprite
 	{
 		dst.x = position.x;
 		dst.y = position.y;
-		src.x = aniCurrentFrame * src.w;
+		src.x = (int)aniCurrentFrame * src.w;
 
 
 		int result = SDL_RenderCopyEx(renderer, pTexture, &src, &dst, rotationDegrees, NULL, flipState);
@@ -122,15 +122,16 @@ struct sprite
 		src.h = frameHeight;
 
 	}
-	void nextFrame()
+	void nextFrame(float frames)
 	{
-		aniCurrentFrame++;
+		//aniCurrentFrame++;
+		aniCurrentFrame += frames;
 
 		if (aniCurrentFrame >= aniFrameCount)
 		{
 			aniCurrentFrame = 0;
 		}
-		src.x += src.w;
+		src.x += src.w ;
 	}
 	void addFrameTime(float frames)
 	{
@@ -535,9 +536,10 @@ void load()
 
 	///////////////////////////////////////////////////
 
-	int frameWidth = 200;
-	int frameHeight= 200;
-	renderAni = sprite(pRenderer, ".. /Assets/sprites/Moving_Kelp.png", frameWidth, frameHeight, 8);
+	int frameWidth = 480 / 8;
+	int frameHeight= 74;
+	int frameCount = 8;
+	renderAni = sprite(pRenderer, "../Assets/sprites/moving_kelp2.png", frameWidth, frameHeight, frameCount);
 	renderAni.setPosition(0, 0);
 
 	
@@ -601,6 +603,7 @@ void Input()
 
 			case(SDL_SCANCODE_SPACE):
 				isShootPressed = true;
+				
 
 				break;
 			}
@@ -727,6 +730,7 @@ void Update()
 	//making the enemy move 
 	enemy1.dst.x = enemy1.dst.x - 1;
 
+	renderAni.nextFrame(0.1);
 
 }
 
