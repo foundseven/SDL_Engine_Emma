@@ -27,17 +27,153 @@ SDL_Texture* pMySprite = nullptr;
 SDL_Rect mySpriteSrc;
 SDL_Rect mySpriteDst;
 
-struct background
+struct sprite
 {
-public:
+
+	struct Vec2
+	{
+		float x;
+		float y;
+
+	};
+
+	public:
 
 	SDL_Texture* pTexture;
 	SDL_Rect src;
 	SDL_Rect dst;
+	int aniFrameCount = 1;
+	float aniCurrentFrame = 0;
+	double rotationDegrees = 0;
+	SDL_RendererFlip flipState = SDL_FLIP_NONE;
+	Vec2 position;
+
+	sprite()
+	{
+		pTexture = nullptr;
+		src = { 0, 0, 0, 0 };
+		dst = { 0, 0, 0 ,0 };
+
+	}
+
+
+	//a non-default constructor
+	sprite(SDL_Renderer* renderer, const char* imageFilePath)
+	{
+
+		pTexture = IMG_LoadTexture(renderer, imageFilePath);
+
+		if (pTexture == NULL)
+		{
+			std::cout << "Image Load Failed! " << SDL_GetError() << std::endl;
+		}
+		else
+		{
+			std::cout << "Image Load Succesful! " << std::endl;
+		}
+
+		if (SDL_QueryTexture(pTexture, NULL, NULL, &src.w, &src.h) != 0)
+		{
+			std::cout << "Query Texture Failed! " << SDL_GetError() << std::endl;
+		}
+		src.x = 0;
+		src.y = 0;
+
+		dst.x = 0;
+		dst.y = 0;
+		dst.w = src.w;
+		dst.h = src.h;
+	}
+
+	sprite(SDL_Renderer* renderer, const char* imageFilePath, int frameWidth, int frameHeight, int numberOfFramesInSheet) : sprite(renderer, imageFilePath)
+	{
+		src.x = 0;
+		src.y = 0;
+
+		dst.x = 0;
+		dst.y = 0;
+		dst.h = src.w = frameWidth;
+		dst.w = src.h = frameHeight;
+
+		aniFrameCount = numberOfFramesInSheet;
+	}
+
+
+	void draw(SDL_Renderer* renderer)
+	{
+		dst.x = position.x;
+		dst.y = position.y;
+		src.x = aniCurrentFrame * src.w;
+
+
+		int result = SDL_RenderCopyEx(renderer, pTexture, &src, &dst, rotationDegrees, NULL, flipState);
+		if (result != 0)
+		{
+			std::cout << "Render Failed!" << SDL_GetError() << std::endl;
+		}
+		else
+		{
+			std::cout << "Render Completed!" << std::endl;
+		}
+	}
+	void setAnimFrameDimensions(int frameWidth, int frameHeight)
+	{
+		src.w = frameWidth;
+		src.h = frameHeight;
+
+	}
+	void nextFrame()
+	{
+		aniCurrentFrame++;
+
+		if (aniCurrentFrame >= aniFrameCount)
+		{
+			aniCurrentFrame = 0;
+		}
+		src.x += src.w;
+	}
+	void addFrameTime(float frames)
+	{
+		aniCurrentFrame += frames;
+
+	}
+	void setPosition(int x, int y)
+	{
+		position.x = x;
+		position.y = y;
+
+	}
+
+	void setSize(int w, int h)
+	{
+		dst.w = w;
+		dst.h = h;
+	}
+
+	Vec2 getSize()
+	{
+		Vec2 sizeXY{ dst.w, dst.h };
+		return sizeXY;
+	}
+};
+
+sprite renderAni = sprite();
+
+struct background
+{
+
+	
+	public:
+
+	SDL_Texture* pTexture;
+	SDL_Rect src;
+	SDL_Rect dst;
+	
 
 
 	// We can also create Member Functions that we call on.
 
+	
 
 	background()
 	{
@@ -76,13 +212,21 @@ public:
 		dst.h = src.h;
 	}
 
+	
 
 	void draw(SDL_Renderer* renderer)
 	{
+		
+
+
 		int result = SDL_RenderCopy(renderer, pTexture, &src, &dst);
 		if (result != 0)
 		{
 			std::cout << "Render Failed!" << SDL_GetError() << std::endl;
+		}
+		else
+		{
+			std::cout << "Render Completed!" << std::endl;
 		}
 	}
 
@@ -387,19 +531,18 @@ void load()
 	lighthouse.dst.x = 1000;
 	lighthouse.dst.y = 450;
 
-	kelp2 = obsticle(pRenderer, "../Assets/sprites/Moving_Kelp.png");
 
-	int kelp2Width = kelp2.src.w ;
-	int kelp2Height = kelp2.src.h ;
-
-	kelp2.dst.w = kelp2Width;
-	kelp2.dst.h = kelp2Height;
-	kelp2.dst.x = 800;
-	kelp2.dst.y = 200;
-	
 
 	///////////////////////////////////////////////////
 
+	int frameWidth = 200;
+	int frameHeight= 200;
+	renderAni = sprite(pRenderer, ".. /Assets/sprites/Moving_Kelp.png", frameWidth, frameHeight, 8);
+	renderAni.setPosition(0, 0);
+
+	
+	/// ////////////////////////////////////////////////
+	
 	renderAmmo = bullet(pRenderer, "../Assets/textures/cannonball.png");
 
 
@@ -621,6 +764,9 @@ void Draw()
 
 	//calling on kelp2
 	kelp2.draw(pRenderer);
+
+	//animation
+	renderAni.draw(pRenderer);
 
 	//show the back buffer
 	SDL_RenderPresent(pRenderer);
