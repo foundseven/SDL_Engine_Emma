@@ -540,7 +540,8 @@ void load()
 	int frameHeight= 74;
 	int frameCount = 8;
 	renderAni = sprite(pRenderer, "../Assets/sprites/moving_kelp2.png", frameWidth, frameHeight, frameCount);
-	renderAni.setPosition(0, 0);
+	renderAni.setPosition(600, 300);
+
 
 	
 	/// ////////////////////////////////////////////////
@@ -694,8 +695,9 @@ void Update()
 	//move bullet
 	renderAmmo.dst.x += 5;
 
-
-	//width
+	//keeping player within the screen
+	
+	//width for player
 	if (renderUserPlayer.dst.x >= WINDOW_WIDTH - renderUserPlayer.dst.w)
 	{
 		renderUserPlayer.dst.x = WINDOW_WIDTH - renderUserPlayer.dst.w;
@@ -711,7 +713,7 @@ void Update()
 		renderUserPlayer.dst.x = 10;
 	}
 
-	//height
+	//height for player
 	if (renderUserPlayer.dst.y >= WINDOW_HEIGHT - renderUserPlayer.dst.h)
 	{
 		renderUserPlayer.dst.y = WINDOW_HEIGHT - renderUserPlayer.dst.h;
@@ -725,6 +727,40 @@ void Update()
 	if (renderUserPlayer.dst.y <= 0 + 10)
 	{
 		renderUserPlayer.dst.y = 10;
+	}
+	////////////////////////////////////
+	// keeping enemy within the screen 
+	
+	//width for player
+	if (enemy1.dst.x >= WINDOW_WIDTH - enemy1.dst.w)
+	{
+		enemy1.dst.x = WINDOW_WIDTH - enemy1.dst.w;
+	}
+
+	if (enemy1.dst.x <= WINDOW_WIDTH * 0)
+	{
+		enemy1.dst.x = (WINDOW_HEIGHT * 0);
+	}
+
+	if (enemy1.dst.x <= 0 + 10)
+	{
+		enemy1.dst.x = 10;
+	}
+
+	//height for player
+	if (enemy1.dst.y >= WINDOW_HEIGHT - enemy1.dst.h)
+	{
+		enemy1.dst.y = WINDOW_HEIGHT - enemy1.dst.h;
+	}
+
+	if (enemy1.dst.y <= WINDOW_HEIGHT * 0)
+	{
+		enemy1.dst.y = (WINDOW_HEIGHT * 0);
+	}
+
+	if (enemy1.dst.y <= 0 + 10)
+	{
+		enemy1.dst.y = 10;
 	}
 
 	//making the enemy move 
