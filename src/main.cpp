@@ -11,7 +11,7 @@ constexpr float FPS = 60.0f; // target frames per second
 constexpr float DELAY_TIME = 1000.0f / FPS; // target time between frames in ms
 const int WINDOW_WIDTH = 1200;
 const int WINDOW_HEIGHT = 600;
-float deltaTime = 1.0f / FPS;x
+float deltaTime = 1.0f / FPS;
 
 bool isGameRunning = true;
 
@@ -222,6 +222,7 @@ public:
 obsticle renderObject = obsticle();
 obsticle rock1;
 obsticle lighthouse;
+obsticle kelp2;
 
 struct bullet
 {
@@ -385,6 +386,16 @@ void load()
 	lighthouse.dst.h = lighthouseHeight;
 	lighthouse.dst.x = 1000;
 	lighthouse.dst.y = 450;
+
+	kelp2 = obsticle(pRenderer, "../Assets/sprites/Moving_Kelp.png");
+
+	int kelp2Width = kelp2.src.w ;
+	int kelp2Height = kelp2.src.h ;
+
+	kelp2.dst.w = kelp2Width;
+	kelp2.dst.h = kelp2Height;
+	kelp2.dst.x = 800;
+	kelp2.dst.y = 200;
 	
 
 	///////////////////////////////////////////////////
@@ -607,6 +618,9 @@ void Draw()
 
 	// calling on lighthouse
 	lighthouse.draw(pRenderer);
+
+	//calling on kelp2
+	kelp2.draw(pRenderer);
 
 	//show the back buffer
 	SDL_RenderPresent(pRenderer);
