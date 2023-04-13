@@ -6,6 +6,8 @@
 #include <SDL_image.h>
 #include <vector>
 #include <SDL_mixer.h>
+#include <string>
+#include <SDL_ttf.h>
 
 //Global variables are accessible from any context 
 constexpr float FPS = 60.0f; // target frames per second
@@ -99,6 +101,16 @@ namespace ye
 			pTexture = nullptr;
 			src = SDL_Rect{ 0, 0, 0, 0 };
 			dst = SDL_Rect{ 0, 0, 0 ,0 };
+		}
+
+		Sprite(SDL_Renderer* renderer, TTF_Font* font, const char* text, SDL_Color color) : Sprite()
+		{
+			SDL_Surface* pSurf = TTF_RenderText_Solid(font, text, color);
+			pTexture = SDL_CreateTextureFromSurface(renderer, pSurf);
+			SDL_FreeSurface(pSurf);
+			TTF_SizeText(font, text, &src.w, &src.h);
+			dst.w = src.w;
+			dst.h = src.h;
 		}
 
 		~Sprite()
@@ -337,18 +349,21 @@ Sprite lighthouse;
 
 Sprite newSprite;
 
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////Init////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
 //audio file
 Mix_Chunk* sfxPlayerShoot;
 Mix_Chunk* sfxEnemyShoot;
 Mix_Chunk* sfxEnemyHit;
 Mix_Music* bgmDefault;
 int audioVolumeCurrent = MIX_MAX_VOLUME;
+
+//score on screen...UI
+TTF_Font* uiFont;
+int currentScore = 0;
+Sprite scoreSprite;
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////Init////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 bool Init()
 {
@@ -396,7 +411,16 @@ bool Init()
 	if (Mix_OpenAudio(playbackFrequency, MIX_DEFAULT_FORMAT, 1, chunkSize) != 0)
 	{
 		std::cout << "Mix_OpenAudio failed!" << SDL_GetError() << std::endl;
+		return false;
 	}
+
+	if (TTF_Init() != 0)
+	{
+		std::cout << "TTF_Init failed! " << SDL_GetError() << std::endl;
+		return false;
+
+	}
+
 	return true;
 }
 
@@ -419,11 +443,11 @@ void load()
 {
 	//loading all textures...
 
-	backgroundImage = Sprite(pRenderer, "../Assets/textures/Still_water_image2.png");
+	backgroundImage = Sprite(pRenderer, "../Assets/textures/background1.png");
 	backgroundImage.position = { 0,0 };
 	backgroundImage.setSize(1200, 600);
 
-	backgroundImage2 = Sprite(pRenderer, "../Assets/textures/Still_water_image3.png");
+	backgroundImage2 = Sprite(pRenderer, "../Assets/textures/background2.png");
 	backgroundImage2.position = { 1200,0 };
 	backgroundImage2.setSize(1200, 600);
 
@@ -431,11 +455,17 @@ void load()
 	///////////////////////////////////////////////////
 	//new player ship
 
-	int playerWidth = 201;
-	int playerHeight = 145;
-	int playerCount = 4;
+	int playerWidth = 94;
+	int playerHeight = 74;
+	int playerCount = 9;
 
-	movingPlayerShip.sprite = Sprite(pRenderer, "../Assets/textures/usership4.png", playerWidth, playerHeight, playerCount);
+	movingPlayerShip.sprite = Sprite(pRenderer, "../Assets/textures/ship2.png", playerWidth, playerHeight, playerCount);
+
+	/*Vec2 playerSize = movingPlayerShip.sprite.getSize();
+	int playerWidth2 = movingPlayerShip.sprite.position.x * 2;
+	int playerHeight2 = movingPlayerShip.sprite.position.y * 2;
+
+	movingPlayerShip.sprite.setSize(playerWidth2, playerHeight2);*/
 
 	movingPlayerShip.sprite.position.x = (WINDOW_WIDTH / 8); //start with left eighth
 	movingPlayerShip.sprite.position.y = (WINDOW_HEIGHT / 2); // in middle
@@ -443,12 +473,12 @@ void load()
 
 	/////////////////////////////////////////////////
 
-	kelp = Sprite(pRenderer, "../Assets/textures/kelp.png");
-	kelp.position = { 500, 300 };
+	kelp = Sprite(pRenderer, "../Assets/textures/rock1.png");
+	kelp.position = { 600, 450 };
 
 
 	rock1 = Sprite(pRenderer, "../Assets/textures/rock1.png");
-	rock1.position = { 700, 200 };
+	rock1.position = { 220, 500 };
 
 	/////////////////////////////////////////////////
 
@@ -459,20 +489,34 @@ void load()
 	int lighthouseHeight = lighthouseSize.y / 4;
 
 	lighthouse.setSize(lighthouseWidth, lighthouseHeight);
-	lighthouse.position = { 1000, 450 };
+	lighthouse.position = { 1000, 234 };
 
 
 	///////////////////////////////////////////////////
 	//loading audio files
 
-	sfxEnemyHit = LoadSound("../Assets/audio/OOF.mp3");
-	sfxPlayerShoot = LoadSound("../Assets/audio/the_rock.mp3");
-	sfxEnemyShoot = LoadSound("../Assets/audio/torpedo.ogg");
+	sfxEnemyHit = LoadSound("../Assets/audio/cannonhit.mp3");
+	sfxPlayerShoot = LoadSound("../Assets/audio/cannonfire.mp3");
+	sfxEnemyShoot = LoadSound("../Assets/audio/cannonfire.mp3");
 	bgmDefault = Mix_LoadMUS("../Assets/audio/background.mp3 ");
 	if (sfxPlayerShoot == NULL)
 	{
 		std::cout << "Mix_LoadWAV failed to load! " << SDL_GetError() << std::endl;
 	}
+
+
+	///////////////////////////////////////////////////
+	//loading font files
+
+	const char* fontFile = "../Assets/fonts/lazy.ttf";
+	uiFont = TTF_OpenFont(fontFile, 64);
+	if (uiFont == NULL)
+	{
+		std::cout << "UIFont failed to load: " << fontFile << " " << SDL_GetError() << std::endl;
+
+	}
+
+
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -483,7 +527,6 @@ void Start()
 {
 	Mix_Volume(-1, audioVolumeCurrent);
 	Mix_PlayMusic(bgmDefault, -1);
-
 }
 
 
@@ -664,7 +707,14 @@ void UpdatePlayer()
 
 void EnemySpawner()
 {
-	enemyShip.sprite = Sprite(pRenderer, "../Assets/textures/enemy1.png");
+
+	int enemyWidth = 295;
+	int enemyHeight = 219;
+	int enemyCount = 9;
+
+
+	enemyShip.sprite = Sprite(pRenderer, "../Assets/textures/enemy2.png", enemyWidth, enemyHeight, enemyCount);
+
 	enemyShip.sprite.position.x = 1200 + 54; //spawns them outside of the screen on the right hand side
 	enemyShip.sprite.position.y = rand() % 720 - 61; //randomized pos
 
@@ -681,6 +731,14 @@ void EnemySpawner()
 	Mix_PlayChannel(-1, sfxEnemyShoot, 0);
 
 	enemySpawnTimer = enemySpawnDelay;
+
+	/*enemyShip.Update();
+	enemyShip.sprite.UpdateAnimation();*/
+}
+
+void AddScore(int scoreToAdd)
+{
+	currentScore += scoreToAdd;
 }
 
 void detectCollisions()
@@ -724,6 +782,8 @@ void detectCollisions()
 				itEnemy = enemyContainer.erase(itEnemy);
 				Mix_PlayChannel(-1, sfxEnemyHit, 0);
 
+				AddScore(1);
+			
 
 				if (itBullet == bulletContainer.end())
 				{
@@ -845,6 +905,19 @@ void Draw()
 	// calling on lighthouse
 	lighthouse.draw(pRenderer);
 
+	//this is for the text
+	//uiSprite = Sprite(uiFont, scoreText, color);
+	//the + op has been overridden for string + string to slap em tg
+	std::string scoreText = "Score: " + std::to_string(currentScore);
+	SDL_Color color = { 255, 255, 255, 255 };
+
+	scoreSprite.Cleanup();
+
+	scoreSprite = Sprite(pRenderer, uiFont, scoreText.c_str(), color);
+	scoreSprite.setPosition(50, 50);
+
+	scoreSprite.draw(pRenderer);
+
 
 	//show the back buffer
 	SDL_RenderPresent(pRenderer);
@@ -873,6 +946,11 @@ void Cleanup()
 	}
 
 	movingPlayerShip.sprite.Cleanup();
+
+
+	TTF_CloseFont(uiFont);
+	TTF_Quit();
+
 
 	Mix_FreeChunk(sfxPlayerShoot);
 	Mix_FreeMusic(bgmDefault);
