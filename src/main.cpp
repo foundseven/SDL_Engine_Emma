@@ -263,7 +263,7 @@ namespace ye
 
 		void Shoot(bool towardRight, std::vector<Bullet>& container, Vec2 velocity)
 		{
-			//create new bullet
+			//create new bullet player
 			Sprite renderAmmo = Sprite(pRenderer, "../Assets/textures/cannonball.png");
 
 			//start bullet at player sprite pos
@@ -275,9 +275,11 @@ namespace ye
 
 			renderAmmo.position.y = sprite.position.y + (sprite.getSize().y / 2) - (renderAmmo.getSize().y / 2);
 
+			//player
 			Bullet bullet;
 			bullet.sprite = renderAmmo;
 			bullet.velocity = velocity;
+
 
 			// add bullet to container
 			container.push_back(bullet);
@@ -286,6 +288,8 @@ namespace ye
 			fireRepeatTimer = fireRepeatDelay;
 
 		};
+
+
 
 		void Update()
 		{
@@ -298,6 +302,75 @@ namespace ye
 		}
 
 	};
+
+	class Enemy
+	{
+	public:
+
+		Sprite sprite;
+		float movesSpeedPx = 100;
+		float fireRepeatDelay = 0.5f;
+
+
+	private:
+
+		float fireRepeatTimer = 0.0f;
+
+	public:
+
+		void Move(Vec2 input)
+		{
+			sprite.position.x += input.x * ((movesSpeedPx * deltaTime) + 0.5);
+			sprite.position.y += input.y * ((movesSpeedPx * deltaTime) + 0.5);
+		};
+
+
+		void Shoot(bool towardRight, std::vector<Bullet>& container, Vec2 velocity)
+		{
+
+			//ememy
+			Sprite renderAmmoEnemy = Sprite(pRenderer, "../Assets/textures/icecannon.png");
+
+
+			//enemy pos
+			renderAmmoEnemy.position.x = sprite.position.x;
+			if (towardRight)
+			{
+				renderAmmoEnemy.position.x += sprite.getSize().x;
+			}
+
+			renderAmmoEnemy.position.y = sprite.position.y + (sprite.getSize().y / 2) - (renderAmmoEnemy.getSize().y / 2);
+
+
+			//enemy
+			Bullet bullet2;
+			bullet2.sprite = renderAmmoEnemy;
+			bullet2.velocity = velocity;
+
+
+			// add bullet to container for enemy
+			container.push_back(bullet2);
+
+
+			//reset cool down timer
+			fireRepeatTimer = fireRepeatDelay;
+
+		};
+
+
+
+		void Update()
+		{
+			fireRepeatTimer -= deltaTime;
+		};
+
+		bool CanShoot()
+		{
+			return (fireRepeatTimer <= 0.0f);
+		}
+
+	};
+
 
 	// Part of AABB collision detection. 
 	// Returns true if the bounds defined by minA and maxA overlap with the bounds defined by minB and maxB
@@ -327,8 +400,8 @@ namespace ye
 using namespace ye;
 
 // enemy ships / shooting
-Ship enemyShip;
-std::vector<Ship> enemyContainer;
+Enemy enemyShip;
+std::vector<Enemy> enemyContainer;
 std::vector<Bullet> enemyBulletContainer;
 float enemySpawnDelay = 2.0f;
 float enemySpawnTimer = 0.0f;
@@ -718,13 +791,14 @@ void EnemySpawner()
 	enemyShip.sprite.position.x = 1200 + 54; //spawns them outside of the screen on the right hand side
 	enemyShip.sprite.position.y = rand() % 720 - 61; //randomized pos
 
-	Ship enemy1;
+	Enemy enemy1;
 	enemy1.sprite = enemyShip.sprite; //sprites stay the same
 	enemy1.fireRepeatDelay = 100.0f; //setting fire speed
 	enemy1.movesSpeedPx = 100; // making sure it moves at the same time
 
 	enemyContainer.push_back(enemy1);
 
+	//
 	Bullet enemyBullet1;
 	enemyBulletContainer.push_back(enemyBullet1);
 
@@ -732,8 +806,6 @@ void EnemySpawner()
 
 	enemySpawnTimer = enemySpawnDelay;
 
-	/*enemyShip.Update();
-	enemyShip.sprite.UpdateAnimation();*/
 }
 
 void AddScore(int scoreToAdd)
@@ -839,7 +911,7 @@ void Update()
 
 	for (int i = 0; i < enemyContainer.size(); i++)
 	{
-		Ship& enemyBois = enemyContainer[i];
+		Enemy& enemyBois = enemyContainer[i];
 		enemyBois.Move({ -1, 0 });
 		enemyBois.Update();
 		if (enemyBois.CanShoot())
@@ -940,7 +1012,7 @@ void Cleanup()
 	{
 		bullets.sprite.Cleanup();
 	}
-	for (Ship& bullets : enemyContainer)
+	for (Enemy& bullets : enemyContainer)
 	{
 		bullets.sprite.Cleanup();
 	}
