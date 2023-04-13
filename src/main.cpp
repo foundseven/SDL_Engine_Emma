@@ -5,6 +5,7 @@
 #include <SDL.h>
 #include <SDL_image.h>
 #include <vector>
+#include <SDL_mixer.h>
 
 //Global variables are accessible from any context 
 constexpr float FPS = 60.0f; // target frames per second
@@ -15,6 +16,7 @@ float deltaTime = 1.0f / FPS;
 
 bool isGameRunning = true;
 
+
 // Anything with a star * to its right is a pointer type. SDL_Window* is a memory address of an SDL_Window
 //Pointers can also be set to point to memory address 0, which means nothing. We call these NULL pointers.
 //Computer memory is addressable by one number, like a homeaddress on one very , very long street.
@@ -23,539 +25,464 @@ SDL_Window* pWindow = nullptr; // assignin a pointer to mullptr means the addres
 SDL_Renderer* pRenderer = nullptr; // NULL is the address 0. =NULL is essentiall the same as NULLptr
 
 
-SDL_Texture* pMySprite = nullptr;
+SDL_Texture* pMySprite;
 SDL_Rect mySpriteSrc;
 SDL_Rect mySpriteDst;
-
-struct sprite
-{
-
-	struct Vec2
-	{
-		float x;
-		float y;
-
-	};
-
-	public:
-
-	SDL_Texture* pTexture;
-	SDL_Rect src;
-	SDL_Rect dst;
-	int aniFrameCount = 1;
-	float aniCurrentFrame = 0;
-	double rotationDegrees = 0;
-	SDL_RendererFlip flipState = SDL_FLIP_NONE;
-	Vec2 position;
-
-	sprite()
-	{
-		pTexture = nullptr;
-		src = { 0, 0, 0, 0 };
-		dst = { 0, 0, 0 ,0 };
-
-	}
-
-
-	//a non-default constructor
-	sprite(SDL_Renderer* renderer, const char* imageFilePath)
-	{
-
-		pTexture = IMG_LoadTexture(renderer, imageFilePath);
-
-		if (pTexture == NULL)
-		{
-			std::cout << "Image Load Failed! " << SDL_GetError() << std::endl;
-		}
-		else
-		{
-			std::cout << "Image Load Succesful! " << std::endl;
-		}
-
-		if (SDL_QueryTexture(pTexture, NULL, NULL, &src.w, &src.h) != 0)
-		{
-			std::cout << "Query Texture Failed! " << SDL_GetError() << std::endl;
-		}
-		src.x = 0;
-		src.y = 0;
-
-		dst.x = 0;
-		dst.y = 0;
-		dst.w = src.w;
-		dst.h = src.h;
-	}
-
-	sprite(SDL_Renderer* renderer, const char* imageFilePath, int frameWidth, int frameHeight, int numberOfFramesInSheet) : sprite(renderer, imageFilePath)
-	{
-		src.x = 0;
-		src.y = 0;
-
-		dst.x = 0;
-		dst.y = 0;
-		dst.h = src.w = frameWidth;
-		dst.w = src.h = frameHeight;
-
-		aniFrameCount = numberOfFramesInSheet;
-	}
-
-
-	void draw(SDL_Renderer* renderer)
-	{
-		dst.x = position.x;
-		dst.y = position.y;
-		src.x = (int)aniCurrentFrame * src.w;
-
-
-		int result = SDL_RenderCopyEx(renderer, pTexture, &src, &dst, rotationDegrees, NULL, flipState);
-		if (result != 0)
-		{
-			std::cout << "Render Failed!" << SDL_GetError() << std::endl;
-		}
-		else
-		{
-			std::cout << "Render Completed!" << std::endl;
-		}
-	}
-	void setAnimFrameDimensions(int frameWidth, int frameHeight)
-	{
-		src.w = frameWidth;
-		src.h = frameHeight;
-
-	}
-	void nextFrame(float frames)
-	{
-		//aniCurrentFrame++;
-		aniCurrentFrame += frames;
-
-		if (aniCurrentFrame >= aniFrameCount)
-		{
-			aniCurrentFrame = 0;
-		}
-		src.x += src.w ;
-	}
-	void addFrameTime(float frames)
-	{
-		aniCurrentFrame += frames;
-
-	}
-	void setPosition(int x, int y)
-	{
-		position.x = x;
-		position.y = y;
-
-	}
-
-	void setSize(int w, int h)
-	{
-		dst.w = w;
-		dst.h = h;
-	}
-
-	Vec2 getSize()
-	{
-		Vec2 sizeXY{ dst.w, dst.h };
-		return sizeXY;
-	}
-};
-
-sprite renderAni = sprite();
-
-struct background
-{
-
-	
-	public:
-
-	SDL_Texture* pTexture;
-	SDL_Rect src;
-	SDL_Rect dst;
-	
-
-
-	// We can also create Member Functions that we call on.
-
-	
-
-	background()
-	{
-		pTexture = nullptr;
-		src = { 0, 0, 0, 0 };
-		dst = { 0, 0, 0 ,0 };
-
-	}
-
-
-	//a non-default constructor
-	background(SDL_Renderer* renderer, const char* imageFilePath)
-	{
-
-		pTexture = IMG_LoadTexture(renderer, imageFilePath);
-
-		if (pTexture == NULL)
-		{
-			std::cout << "Image Load Failed! " << SDL_GetError() << std::endl;
-		}
-		else
-		{
-			std::cout << "Image Load Succesful! " << std::endl;
-		}
-
-		if (SDL_QueryTexture(pTexture, NULL, NULL, &src.w, &src.h) != 0)
-		{
-			std::cout << "Query Texture Failed! " << SDL_GetError() << std::endl;
-		}
-		src.x = 0;
-		src.y = 0;
-
-		dst.x = 0;
-		dst.y = 0;
-		dst.w = src.w;
-		dst.h = src.h;
-	}
-
-	
-
-	void draw(SDL_Renderer* renderer)
-	{
-		
-
-
-		int result = SDL_RenderCopy(renderer, pTexture, &src, &dst);
-		if (result != 0)
-		{
-			std::cout << "Render Failed!" << SDL_GetError() << std::endl;
-		}
-		else
-		{
-			std::cout << "Render Completed!" << std::endl;
-		}
-	}
-
-};
-
-background renderBackground = background(); // call the default constructor
-
-
-
-struct userPlayer 
-{
-public:
-
-SDL_Texture* usership;
 SDL_Rect src;
 SDL_Rect dst;
 
 
-// We can also create Member Functions that we call on.
-
-
-	userPlayer()
-	{
-		std::cout << "Defualt Constructor" << std::endl;
-		usership = nullptr;
-		src = { 0, 0, 0, 0 };
-		dst = { 0, 0, 0 ,0 };
-
-	}
-
-
-	//a non-default constructor
-	userPlayer(SDL_Renderer* renderer, const char* imageFilePath)
-	{
-		std::cout << "user player Constructor" << std::endl;
-		usership = IMG_LoadTexture(renderer, imageFilePath);
-
-		if (usership == NULL)
-		{
-			std::cout << "Image Load Failed! " << SDL_GetError() << std::endl;
-		}
-		else
-		{
-			std::cout << "Image Load Succesful! " << std::endl;
-		}
-
-		if ( SDL_QueryTexture(usership, NULL, NULL, &src.w, &src.h) != 0)
-		{
-			std::cout << "Query Texture Failed! " << SDL_GetError() << std::endl;
-		}
-		src.x = 0;
-		src.y = 0;
-
-		dst.x = 0;
-		dst.y = 0;
-		dst.w = src.w;
-		dst.h = src.h;
-	}
-
-
-void draw(SDL_Renderer* renderer)
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////Ye - Namespace////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+namespace ye
 {
-	int result = SDL_RenderCopy(renderer, usership, &src, &dst);
-	if (result != 0)
+
+	struct Vec2
 	{
-		std::cout << "Render Failed!" << SDL_GetError() << std::endl;
+		float x = 0;
+		float y = 0;
+
+	};
+
+	struct Sprite
+	{
+
+	private:
+
+		SDL_Texture* pTexture;
+		SDL_Rect src;
+		SDL_Rect dst;
+
+		float animationCurrentFrame = 0.0f;
+
+	public:
+
+		double rotationDegrees = 0;
+		SDL_RendererFlip flipState = SDL_FLIP_NONE;
+		Vec2 position;
+
+		int animationFrameCount = 1;
+		
+
+
+		//getter and setter functions
+		void setSize(Vec2 sizeWidthHeight)
+		{
+			dst.w = sizeWidthHeight.x;
+			dst.h = sizeWidthHeight.y;
+		}
+
+		//same name, but the comp choses which one is used based on parameters
+		void setSize(int w, int h)
+		{
+			dst.w = w;
+			dst.h = h;
+		}
+
+		Vec2 getSize()
+		{
+			Vec2 sizeXY{ dst.w, dst.h };
+			return sizeXY;
+		}
+
+		void SetSpriteSheetFrameSize(int width, int height)
+		{
+			src.w = width;
+			src.h = height;
+		}
+
+
+		Sprite()
+		{
+			std::cout << "Sprite Default Constructor" << std::endl;
+			pTexture = nullptr;
+			src = SDL_Rect{ 0, 0, 0, 0 };
+			dst = SDL_Rect{ 0, 0, 0 ,0 };
+		}
+
+		~Sprite()
+		{
+			SDL_DestroyTexture;
+		}
+
+		//a non-default constructor
+		Sprite(SDL_Renderer* renderer, const char* imageFilePath)
+		{
+
+			std::cout << "Sprite filepath Constructor" << std::endl;
+			src = SDL_Rect{ 0, 0, 0, 0 };
+
+			pTexture = IMG_LoadTexture(renderer, imageFilePath);
+
+			if (pTexture == NULL)
+			{
+				std::cout << "Image Load Failed! " << SDL_GetError() << std::endl;
+			}
+			else
+			{
+				std::cout << "Image Load Succesful! " << std::endl;
+			}
+
+			SDL_QueryTexture(pTexture, NULL, NULL, &src.w, &src.h);
+
+			dst = SDL_Rect{ 0, 0, src.w, src.h };
+
+		}
+
+		Sprite(SDL_Renderer* renderer, const char* imageFilePath, int frameSizeX, int frameSizeY, int frameCount) : Sprite(renderer, imageFilePath)
+		{
+			SetSpriteSheetFrameSize(frameSizeX, frameSizeY);
+			setSize(frameSizeX, frameSizeY);
+			animationFrameCount = frameCount;
+
+			pTexture = IMG_LoadTexture(renderer, imageFilePath);
+
+			if (pTexture == NULL)
+			{
+				std::cout << "Image Load Failed! " << SDL_GetError() << std::endl;
+			}
+			else
+			{
+				std::cout << "Image Load Succesful! " << std::endl;
+			}
+		}
+
+
+		void draw(SDL_Renderer* renderer)
+		{
+			dst.x = position.x;
+			dst.y = position.y;
+			src.x = src.w * (int)animationCurrentFrame;
+			SDL_RenderCopyEx(renderer, pTexture, &src, &dst, rotationDegrees, NULL, flipState);
+
+		}
+
+		void setAnimationFrameDimensions(int frameWidth, int frameHeight)
+		{
+			src.w = frameWidth;
+			src.h = frameHeight;
+
+		}
+
+		void nextFrame()
+		{
+			SetFrame(animationCurrentFrame + 1);
+		}
+
+		void SetFrame(int frame)
+		{
+			animationCurrentFrame = frame % animationFrameCount;
+			src.x = src.w * animationCurrentFrame;
+		}
+
+		void UpdateAnimation()
+		{
+			animationCurrentFrame += 0.1;
+			if (animationCurrentFrame >= animationFrameCount)
+			{
+				animationCurrentFrame -= animationFrameCount;
+			}
+
+				
+		}
+
+		void setPosition(int x, int y)
+		{
+			position.x = x;
+			position.y = y;
+		}
+
+
+		SDL_Rect GetRect() const
+		{
+			SDL_Rect returnValue = dst;
+			returnValue.x = position.x;
+			returnValue.y = position.y;
+			return returnValue;
+
+		}
+
+		void Cleanup()
+		{
+			SDL_DestroyTexture(pTexture);
+		}
+
+	}; // struct sprite
+
+
+	class Bullet
+	{
+	public:
+
+		Sprite sprite;
+		Vec2 velocity;
+
+		//move bullet
+		void Update()
+		{
+			sprite.position.x += velocity.x * deltaTime;
+			sprite.position.y += velocity.y * deltaTime;
+		}
+
+	};
+
+	class Ship
+	{
+	public:
+
+		Sprite sprite;
+		float movesSpeedPx = 100;
+		float fireRepeatDelay = 0.5f;
+
+
+	private:
+
+		float fireRepeatTimer = 0.0f;
+
+	public:
+
+		void Move(Vec2 input)
+		{
+			sprite.position.x += input.x * ((movesSpeedPx * deltaTime) + 0.5);
+			sprite.position.y += input.y * ((movesSpeedPx * deltaTime) + 0.5);
+		};
+
+
+		void Shoot(bool towardRight, std::vector<Bullet>& container, Vec2 velocity)
+		{
+			//create new bullet
+			Sprite renderAmmo = Sprite(pRenderer, "../Assets/textures/cannonball.png");
+
+			//start bullet at player sprite pos
+			renderAmmo.position.x = sprite.position.x;
+			if (towardRight)
+			{
+				renderAmmo.position.x += sprite.getSize().x;
+			}
+
+			renderAmmo.position.y = sprite.position.y + (sprite.getSize().y / 2) - (renderAmmo.getSize().y / 2);
+
+			Bullet bullet;
+			bullet.sprite = renderAmmo;
+			bullet.velocity = velocity;
+
+			// add bullet to container
+			container.push_back(bullet);
+
+			//reset cool down timer
+			fireRepeatTimer = fireRepeatDelay;
+
+		};
+
+		void Update()
+		{
+			fireRepeatTimer -= deltaTime;
+		};
+
+		bool CanShoot()
+		{
+			return (fireRepeatTimer <= 0.0f);
+		}
+
+	};
+
+	// Part of AABB collision detection. 
+	// Returns true if the bounds defined by minA and maxA overlap with the bounds defined by minB and maxB
+	bool AreBoundsOverlapping(int minA, int maxA, int minB, int maxB)
+	{
+		bool isOverlapping = false;
+		if (maxA >= minB && maxA <= maxB) // check if max of A is contained inside B
+			isOverlapping = true;
+		if (minA <= maxB && maxA >= maxB)
+			isOverlapping = true;
+		return isOverlapping;
 	}
+
+	bool AreSpritesColliding(Sprite A, Sprite B)
+	{
+		SDL_Rect boundsA = A.GetRect();
+		SDL_Rect boundsB = B.GetRect();
+
+		SDL_bool isColliding = SDL_HasIntersection(&boundsA, &boundsB);
+
+		return (bool)isColliding;
+	}
+
+
 }
 
-};
+using namespace ye;
 
-userPlayer renderUserPlayer = userPlayer(); // call the default constructor
-userPlayer enemy1;
+// enemy ships / shooting
+Ship enemyShip;
+std::vector<Ship> enemyContainer;
+std::vector<Bullet> enemyBulletContainer;
+float enemySpawnDelay = 2.0f;
+float enemySpawnTimer = 0.0f;
 
-struct obsticle
-{
-public:
+//character bullets
+std::vector<Bullet> bulletContainer;
 
-	SDL_Texture* object;
-	SDL_Rect src;
-	SDL_Rect dst;
+///////////
 
+Sprite backgroundImage;
+Sprite backgroundImage2;
+Ship movingPlayerShip;
+//Ship playerShip;
 
-	// We can also create Member Functions that we call on.
+Sprite kelp;
+Sprite rock1;
+Sprite lighthouse;
 
-
-	obsticle()
-	{
-		std::cout << "Defualt Constructor" << std::endl;
-		object = nullptr;
-		src = { 0, 0, 0, 0 };
-		dst = { 0, 0, 0 ,0 };
-
-	}
-
-
-	//a non-default constructor
-	obsticle(SDL_Renderer* renderer, const char* imageFilePath)
-	{
-		std::cout << "user player Constructor" << std::endl;
-		object = IMG_LoadTexture(renderer, imageFilePath);
-
-		if (object == NULL)
-		{
-			std::cout << "Image Load Failed! " << SDL_GetError() << std::endl;
-		}
-		else
-		{
-			std::cout << "Image Load Succesful! " << std::endl;
-		}
-
-		if (SDL_QueryTexture(object, NULL, NULL, &src.w, &src.h) != 0)
-		{
-			std::cout << "Query Texture Failed! " << SDL_GetError() << std::endl;
-		}
-		src.x = 0;
-		src.y = 0;
-
-		dst.x = 0;
-		dst.y = 0;
-		dst.w = src.w;
-		dst.h = src.h;
-	}
+Sprite newSprite;
 
 
-	void draw(SDL_Renderer* renderer)
-	{
-		int result = SDL_RenderCopy(renderer, object, &src, &dst);
-		if (result != 0)
-		{
-			std::cout << "Render Failed!" << SDL_GetError() << std::endl;
-		}
-	}
-
-};
-
-obsticle renderObject = obsticle();
-obsticle rock1;
-obsticle lighthouse;
-obsticle kelp2;
-
-struct bullet
-{
-public:
-
-	SDL_Texture* ammo;
-	SDL_Rect src;
-	SDL_Rect dst;
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////Init////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-	// We can also create Member Functions that we call on.
+//audio file
+Mix_Chunk* sfxPlayerShoot;
+Mix_Chunk* sfxEnemyShoot;
+Mix_Chunk* sfxEnemyHit;
+Mix_Music* bgmDefault;
+int audioVolumeCurrent = MIX_MAX_VOLUME;
 
-
-	bullet()
-	{
-		ammo = nullptr;
-		src = { 0, 0, 0, 0 };
-		dst = { 0, 0, 0 ,0 };
-
-	}
-
-
-	//a non-default constructor
-	bullet(SDL_Renderer* renderer, const char* imageFilePath)
-	{
-
-		ammo = IMG_LoadTexture(renderer, imageFilePath);
-
-		if (ammo == NULL)
-		{
-			std::cout << "Image Load Failed! " << SDL_GetError() << std::endl;
-		}
-		else
-		{
-			std::cout << "Image Load Succesful! " << std::endl;
-		}
-
-		if (SDL_QueryTexture(ammo, NULL, NULL, &src.w, &src.h) != 0)
-		{
-			std::cout << "Query Texture Failed! " << SDL_GetError() << std::endl;
-		}
-		src.x = 0;
-		src.y = 0;
-
-		dst.x = 0;
-		dst.y = 0;
-		dst.w = src.w;
-		dst.h = src.h;
-	}
-
-
-	void draw(SDL_Renderer* renderer)
-	{
-		int result = SDL_RenderCopy(renderer, ammo, &src, &dst);
-		if (result != 0)
-		{
-			std::cout << "Render Failed!" << SDL_GetError() << std::endl;
-		}
-	}
-
-};
-
-bullet renderAmmo = bullet(); // call the default constructor
-
-
-//init is short for initialize, we are setting p the game window, start SDL feature, ect
 bool Init()
 {
-	
-	SDL_Init(SDL_INIT_EVERYTHING);
+	if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
+	{
+		std::cout << "Sdl Init Failed" << SDL_GetError() << std::endl;
+		return false;
+	}
+
+	std::cout << "Sdl Init Success" << std::endl;
+
 
 	// Display Main SDL Window
-	// get pointer to SDL_WINDOW object
-
 	pWindow = SDL_CreateWindow("Thornewell_101466157", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, 0
-		  // (borderless) SDL_WINDOW_MAXIMIZED | SDL_WINDOW_BORDERLESS 
-		 );
+		// (borderless) SDL_WINDOW_MAXIMIZED | SDL_WINDOW_BORDERLESS 
+	);
 
 
 	if (pWindow == NULL) //if the window creations failed...
 	{
 		std::cout << "Window Creation Failed! " << SDL_GetError() << std::endl;
+		return false;
 	}
 	else
 	{
 		std::cout << "Window Creation Succesful! " << std::endl;
 	}
 
-
-
 	//get pointer to SDL_Renderer object for use of drawing sprites
 	pRenderer = SDL_CreateRenderer(pWindow, -1, 0);
 
-	if (pRenderer == NULL) 
+	if (pRenderer == NULL)
 	{
 		std::cout << "Renderer Creation Failed! " << SDL_GetError() << std::endl;
+		return false;
 	}
 	else
 	{
 		std::cout << "Renderer Creation Succesful! " << std::endl;
 	}
+
+	int playbackFrequency = 22050;
+	int chunkSize = 1024;
+
+	if (Mix_OpenAudio(playbackFrequency, MIX_DEFAULT_FORMAT, 1, chunkSize) != 0)
+	{
+		std::cout << "Mix_OpenAudio failed!" << SDL_GetError() << std::endl;
+	}
 	return true;
 }
 
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////Load////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+Mix_Chunk* LoadSound(const char* imageFilePath)
+{
+	Mix_Chunk* sound = Mix_LoadWAV(imageFilePath);
+	if (sound == NULL)
+	{
+		std::cout << "Mix_LoadWAV file failed! " << SDL_GetError() << std::endl;
+
+	}
+	return sound;
+}
 
 void load()
 {
 	//loading all textures...
-	//SDL_Texture * IMG_LoadTexture(SDL_Renderer *renderer, const char *file)
-	renderBackground = background(pRenderer, "../Assets/textures/Still_water_image.png");
 
+	backgroundImage = Sprite(pRenderer, "../Assets/textures/Still_water_image2.png");
+	backgroundImage.position = { 0,0 };
+	backgroundImage.setSize(1200, 600);
 
-	int backgroundWidth = renderBackground.src.w ;
-	int backgroundHeight = renderBackground.src.h ;
-
-	renderBackground.dst.w = backgroundWidth;
-	renderBackground.dst.h = backgroundHeight;
-
-	/////////////////////////////////////////////////
-
-	renderUserPlayer = userPlayer(pRenderer, "../Assets/textures/usership.png");
-
-
-	int userWidth = renderUserPlayer.src.w / 10;
-	int userHeight = renderUserPlayer.src.h / 10;
-
-	renderUserPlayer.dst.w =  userWidth;
-	renderUserPlayer.dst.h = userHeight;
-	renderUserPlayer.dst.x = (WINDOW_WIDTH / 8); //start with left eighth
-	renderUserPlayer.dst.y = (WINDOW_HEIGHT / 2) - userHeight/2; // in middle
-
-	enemy1 = userPlayer(pRenderer, "../Assets/textures/enemy1.png");
-	enemy1.dst.x = 1200;
-	enemy1.dst.y = 320;
-
-	/////////////////////////////////////////////////
-
-	renderObject = obsticle(pRenderer, "../Assets/textures/kelp.png");
-
-
-	int objectWidth = renderObject.src.w /2;
-	int objectHeight = renderObject.src.h /2;
-
-	renderObject.dst.w = objectWidth;
-	renderObject.dst.h = objectHeight;
-	renderObject.dst.x = (WINDOW_WIDTH /  2); //start with left eighth
-	renderObject.dst.y = (WINDOW_HEIGHT / 7) ; // and up
-
-
-	rock1 = obsticle(pRenderer, "../Assets/textures/rock1.png");
-	rock1.dst.x = 700;
-	rock1.dst.y = 200;
-
-	lighthouse = obsticle(pRenderer, "../Assets/textures/lighthouse.png");
-	
-	int lighthouseWidth = lighthouse.src.w / 4;
-	int lighthouseHeight = lighthouse.src.h / 4;
-
-	lighthouse.dst.w = lighthouseWidth;
-	lighthouse.dst.h = lighthouseHeight;
-	lighthouse.dst.x = 1000;
-	lighthouse.dst.y = 450;
-
+	backgroundImage2 = Sprite(pRenderer, "../Assets/textures/Still_water_image3.png");
+	backgroundImage2.position = { 1200,0 };
+	backgroundImage2.setSize(1200, 600);
 
 
 	///////////////////////////////////////////////////
+	//new player ship
 
-	int frameWidth = 480 / 8;
-	int frameHeight= 74;
-	int frameCount = 8;
-	renderAni = sprite(pRenderer, "../Assets/sprites/moving_kelp2.png", frameWidth, frameHeight, frameCount);
-	renderAni.setPosition(600, 300);
+	int playerWidth = 201;
+	int playerHeight = 145;
+	int playerCount = 4;
 
+	movingPlayerShip.sprite = Sprite(pRenderer, "../Assets/textures/usership4.png", playerWidth, playerHeight, playerCount);
 
-	
-	/// ////////////////////////////////////////////////
-	
-	renderAmmo = bullet(pRenderer, "../Assets/textures/cannonball.png");
+	movingPlayerShip.sprite.position.x = (WINDOW_WIDTH / 8); //start with left eighth
+	movingPlayerShip.sprite.position.y = (WINDOW_HEIGHT / 2); // in middle
 
 
-	int ammoWidth = renderAmmo.src.w / 2;
-	int ammoHeight = renderAmmo.src.h / 2;
+	/////////////////////////////////////////////////
 
-	renderAmmo.dst.w = ammoWidth;
-	renderAmmo.dst.h = ammoHeight;
-	renderAmmo.dst.x = (WINDOW_WIDTH / 4); //start with left eighth
-	renderAmmo.dst.y = (WINDOW_HEIGHT / 2); // and up
+	kelp = Sprite(pRenderer, "../Assets/textures/kelp.png");
+	kelp.position = { 500, 300 };
+
+
+	rock1 = Sprite(pRenderer, "../Assets/textures/rock1.png");
+	rock1.position = { 700, 200 };
+
+	/////////////////////////////////////////////////
+
+	lighthouse = Sprite(pRenderer, "../Assets/textures/lighthouse.png");
+
+	Vec2 lighthouseSize = lighthouse.getSize();
+	int lighthouseWidth = lighthouseSize.x / 4;
+	int lighthouseHeight = lighthouseSize.y / 4;
+
+	lighthouse.setSize(lighthouseWidth, lighthouseHeight);
+	lighthouse.position = { 1000, 450 };
+
+
+	///////////////////////////////////////////////////
+	//loading audio files
+
+	sfxEnemyHit = LoadSound("../Assets/audio/OOF.mp3");
+	sfxPlayerShoot = LoadSound("../Assets/audio/the_rock.mp3");
+	sfxEnemyShoot = LoadSound("../Assets/audio/torpedo.ogg");
+	bgmDefault = Mix_LoadMUS("../Assets/audio/background.mp3 ");
+	if (sfxPlayerShoot == NULL)
+	{
+		std::cout << "Mix_LoadWAV failed to load! " << SDL_GetError() << std::endl;
+	}
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////Input////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void Start()
+{
+	Mix_Volume(-1, audioVolumeCurrent);
+	Mix_PlayMusic(bgmDefault, -1);
 
 }
 
@@ -566,10 +493,12 @@ bool isDownPressed = false;
 bool isShootPressed = false;
 bool isForwardPressed = false;
 bool isBackPressed = false;
-const float playerSpeedPx = 600.0f; //pixels per second
-const float playerShootCoolDownDuration = 0.5f; // time between shots
-float playerShootCoolDownTimer = 0.0f; //determines when we can shoot again
 
+
+//const float playerSpeedPx = 600.0f; //pixels per second
+//const float playerShootCoolDownDuration = 0.1f; // time between shots
+//float playerShootCoolDownTimer = 0.0f; //determines when we can shoot again
+int bulletSpeed = 600.0f;
 
 void Input()
 {
@@ -579,7 +508,7 @@ void Input()
 		switch (event.type)
 		{
 		case (SDL_KEYDOWN):
-			
+
 			switch (event.key.keysym.scancode)
 			{
 			case (SDL_SCANCODE_W):
@@ -604,13 +533,36 @@ void Input()
 
 			case(SDL_SCANCODE_SPACE):
 				isShootPressed = true;
+
+				break;
+
+			case(SDL_SCANCODE_EQUALS):
+				//increase vol
+				audioVolumeCurrent += 10;
+				audioVolumeCurrent = min(audioVolumeCurrent, MIX_MAX_VOLUME);
+
+				Mix_Volume(-1, audioVolumeCurrent);
+				Mix_VolumeMusic(audioVolumeCurrent / 2);
+				std::cout << "Volume: " << audioVolumeCurrent << std::endl;
+
+				break;
+
+			case(SDL_SCANCODE_MINUS):
+				//lower vol
+				audioVolumeCurrent -= 10;
+				audioVolumeCurrent = max(audioVolumeCurrent, 0);
+
+				Mix_Volume(-1, audioVolumeCurrent);
+				Mix_VolumeMusic(audioVolumeCurrent / 2);
+				std::cout << "Volume: " << audioVolumeCurrent << std::endl;
 				
+
 
 				break;
 			}
 			break;
 		}
-		
+
 		switch (event.type)
 		{
 		case(SDL_KEYUP):
@@ -644,178 +596,297 @@ void Input()
 		}
 	}
 
-
-
 }
 
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////Update////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void UpdatePlayer()
+{
+	ye::Vec2 inputVector{};
+
+	if (isUpPressed)
+	{
+		inputVector.y = -1;
+
+		if (movingPlayerShip.sprite.position.y < 0)
+			movingPlayerShip.sprite.position.y = 0;
+	}
+	if (isDownPressed)
+	{
+
+		inputVector.y = 1;
+		const int lowestPointOnScreen = WINDOW_HEIGHT - movingPlayerShip.sprite.getSize().y;
+		if (movingPlayerShip.sprite.position.y > lowestPointOnScreen)
+		{
+			movingPlayerShip.sprite.position.y = lowestPointOnScreen;
+		}
+	}
+	if (isForwardPressed)
+	{
+		inputVector.x = 1;
+
+		if (movingPlayerShip.sprite.position.x >= WINDOW_WIDTH - movingPlayerShip.sprite.getSize().x)
+		{
+			movingPlayerShip.sprite.position.x = WINDOW_WIDTH - movingPlayerShip.sprite.getSize().x;
+		}
+	}
+	if (isBackPressed)
+	{
+		inputVector.x = -1;
+		const int lowestSideOnScreen = 0;
+		if (movingPlayerShip.sprite.position.x <= lowestSideOnScreen)
+		{
+			movingPlayerShip.sprite.position.x = lowestSideOnScreen;
+		}
+	}
+
+	//if player is off cooldown
+	if (isShootPressed && movingPlayerShip.CanShoot())
+	{
+		bool toRight = true;
+		Vec2 velocity = { 500, 0 };
+		movingPlayerShip.Shoot(toRight, bulletContainer, velocity);
+
+		//play sound
+		Mix_PlayChannel(-1, sfxPlayerShoot, 0);
+
+
+	}
+
+	movingPlayerShip.Move(inputVector);
+	movingPlayerShip.Update();
+
+	movingPlayerShip.sprite.UpdateAnimation();
+	
+}
+
+void EnemySpawner()
+{
+	enemyShip.sprite = Sprite(pRenderer, "../Assets/textures/enemy1.png");
+	enemyShip.sprite.position.x = 1200 + 54; //spawns them outside of the screen on the right hand side
+	enemyShip.sprite.position.y = rand() % 720 - 61; //randomized pos
+
+	Ship enemy1;
+	enemy1.sprite = enemyShip.sprite; //sprites stay the same
+	enemy1.fireRepeatDelay = 100.0f; //setting fire speed
+	enemy1.movesSpeedPx = 100; // making sure it moves at the same time
+
+	enemyContainer.push_back(enemy1);
+
+	Bullet enemyBullet1;
+	enemyBulletContainer.push_back(enemyBullet1);
+
+	Mix_PlayChannel(-1, sfxEnemyShoot, 0);
+
+	enemySpawnTimer = enemySpawnDelay;
+}
+
+void detectCollisions()
+{
+
+	Sprite& playerSprite = movingPlayerShip.sprite;
+
+	//std::vector<Bullet>::iterator
+	for (auto it = enemyBulletContainer.begin(); it != enemyBulletContainer.end();)
+	{
+		Sprite& bulletSprite = it->sprite;
+
+		if (AreSpritesColliding(playerSprite, bulletSprite))
+		{
+			movingPlayerShip.sprite.rotationDegrees += 10;
+
+			//destroy the bullet
+			it = enemyBulletContainer.erase(it);
+
+		}
+		else
+		{
+			it++;
+		}
+	}
+
+	//player bullets vs enemy ship
+
+	for (auto itBullet = bulletContainer.begin(); itBullet != bulletContainer.end();)
+	{
+
+		for (auto itEnemy = enemyContainer.begin(); itEnemy != enemyContainer.end();)
+		{
+			Sprite& bullet = itBullet->sprite;
+			Sprite& enemy = itEnemy->sprite;
+
+			if (AreSpritesColliding(itBullet->sprite, itEnemy->sprite))
+			{
+				//destroy both
+				itBullet = bulletContainer.erase(itBullet);
+				itEnemy = enemyContainer.erase(itEnemy);
+				Mix_PlayChannel(-1, sfxEnemyHit, 0);
+
+
+				if (itBullet == bulletContainer.end())
+				{
+					break;
+				}
+			}
+			else
+			{
+				itEnemy++;
+			}
+
+		}
+		if (itBullet != bulletContainer.end())
+		{
+			itBullet++;
+		}
+	}
+
+}
 
 void Update()
 {
 
-	if (isUpPressed)
-	{
-		renderUserPlayer.dst.y -= playerSpeedPx / FPS;
-	}
-	if (isDownPressed)
-	{
-		renderUserPlayer.dst.y += playerSpeedPx * deltaTime;
+	UpdatePlayer();
 
-	}
-	if (isForwardPressed)
-	{
-		renderUserPlayer.dst.x += playerSpeedPx / FPS;
+	//this will be moving background... do not delete
 
-	}
-	if (isBackPressed)
-	{
-		renderUserPlayer.dst.x -= playerSpeedPx * deltaTime;
+	backgroundImage.position.x -= 2;
 
-	}
-	if (isShootPressed)
+	if (backgroundImage.position.x <= -1200)
 	{
-		//if player is off cooldown
-		if (playerShootCoolDownTimer <= 0.0f)
+		backgroundImage.position.x = 0;
+	}
+
+	backgroundImage2.position.x -= 2;
+
+	if (backgroundImage2.position.x <= 0)
+	{
+		backgroundImage2.position.x = 1200;
+	}
+
+	//move all bullets across the screen
+	for (int i = 0; i < bulletContainer.size(); i++)
+	{
+		bulletContainer[i].Update();
+	}
+
+	//check this later
+	for (int i = 0; i < enemyBulletContainer.size(); i++)
+	{
+		enemyBulletContainer[i].Update();
+	}
+
+	for (int i = 0; i < enemyContainer.size(); i++)
+	{
+		Ship& enemyBois = enemyContainer[i];
+		enemyBois.Move({ -1, 0 });
+		enemyBois.Update();
+		if (enemyBois.CanShoot())
 		{
-			std::cout << "Shoot!" << std::endl;
-
-			renderAmmo.dst.x = renderUserPlayer.dst.x + renderUserPlayer.dst.h - renderAmmo.dst.w;
-			renderAmmo.dst.y = renderUserPlayer.dst.y + renderUserPlayer.dst.w/2;
-
-			//reset cool down timer
-			playerShootCoolDownTimer = playerShootCoolDownDuration;
-
+			bool towardsRight = false;
+			Vec2 velocity = { -400, 0 };
+			enemyBois.Shoot(towardsRight, enemyBulletContainer, velocity);
 		}
-
-
 	}
-	
-	//tick down shoot cooldown
-	playerShootCoolDownTimer -= deltaTime;
 
-	//move bullet
-	renderAmmo.dst.x += 5;
+	//check these later
+	enemySpawnTimer -= deltaTime;
 
-	//keeping player within the screen
-	
-	//width for player
-	if (renderUserPlayer.dst.x >= WINDOW_WIDTH - renderUserPlayer.dst.w)
+	if (enemySpawnTimer <= 0)
 	{
-		renderUserPlayer.dst.x = WINDOW_WIDTH - renderUserPlayer.dst.w;
+		EnemySpawner();
 	}
 
-	if (renderUserPlayer.dst.x <= WINDOW_WIDTH * 0)
-	{
-		renderUserPlayer.dst.x = (WINDOW_HEIGHT * 0);
-	}
-
-	if (renderUserPlayer.dst.x <= 0 + 10)
-	{
-		renderUserPlayer.dst.x = 10;
-	}
-
-	//height for player
-	if (renderUserPlayer.dst.y >= WINDOW_HEIGHT - renderUserPlayer.dst.h)
-	{
-		renderUserPlayer.dst.y = WINDOW_HEIGHT - renderUserPlayer.dst.h;
-	}
-
-	if (renderUserPlayer.dst.y <= WINDOW_HEIGHT * 0)
-	{
-		renderUserPlayer.dst.y = (WINDOW_HEIGHT * 0);
-	}
-
-	if (renderUserPlayer.dst.y <= 0 + 10)
-	{
-		renderUserPlayer.dst.y = 10;
-	}
-	////////////////////////////////////
-	// keeping enemy within the screen 
-	
-	//width for player
-	if (enemy1.dst.x >= WINDOW_WIDTH - enemy1.dst.w)
-	{
-		enemy1.dst.x = WINDOW_WIDTH - enemy1.dst.w;
-	}
-
-	if (enemy1.dst.x <= WINDOW_WIDTH * 0)
-	{
-		enemy1.dst.x = (WINDOW_HEIGHT * 0);
-	}
-
-	if (enemy1.dst.x <= 0 + 10)
-	{
-		enemy1.dst.x = 10;
-	}
-
-	//height for player
-	if (enemy1.dst.y >= WINDOW_HEIGHT - enemy1.dst.h)
-	{
-		enemy1.dst.y = WINDOW_HEIGHT - enemy1.dst.h;
-	}
-
-	if (enemy1.dst.y <= WINDOW_HEIGHT * 0)
-	{
-		enemy1.dst.y = (WINDOW_HEIGHT * 0);
-	}
-
-	if (enemy1.dst.y <= 0 + 10)
-	{
-		enemy1.dst.y = 10;
-	}
-
-	//making the enemy move 
-	enemy1.dst.x = enemy1.dst.x - 1;
-
-	renderAni.nextFrame(0.1);
+	detectCollisions();
 
 }
-
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////Draw////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+//this should be cleaned up now
 void Draw()
 {
 	SDL_SetRenderDrawColor(pRenderer, 0, 0, 20, 255);
 	SDL_RenderClear(pRenderer);
 
-	int result = SDL_RenderCopy(pRenderer, pMySprite, &mySpriteSrc, &mySpriteDst);
-	if (result != 0)
-	{
-		std::cout << "Render Failed!" << SDL_GetError() << std::endl;
-	}
-
 	// calling on the draw function for background
-	renderBackground.draw(pRenderer);
+
+	backgroundImage.draw(pRenderer);
+	backgroundImage2.draw(pRenderer);
 
 	// calling on user ship
-	renderUserPlayer.draw(pRenderer);
+	movingPlayerShip.sprite.draw(pRenderer);
 
-	//drawing enemy
-	enemy1.draw(pRenderer);
 
 	//calling on first object
-	renderObject.draw(pRenderer);
+	kelp.draw(pRenderer);
 
 	//calling on rock1
 	rock1.draw(pRenderer);
 
-	//calling on cannonball
-	renderAmmo.draw(pRenderer);
+	//draw ALL bullets on screen
+	for (int i = 0; i < bulletContainer.size(); i++)
+	{
+		bulletContainer[i].sprite.draw(pRenderer);
+	}
+
+	//enemy
+	for (int i = 0; i < enemyContainer.size(); i++)
+	{
+		enemyContainer[i].sprite.draw(pRenderer);
+	}
+	//enemy bullets
+	for (int i = 0; i < enemyBulletContainer.size(); i++)
+	{
+		enemyBulletContainer[i].sprite.draw(pRenderer);
+	}
 
 	// calling on lighthouse
 	lighthouse.draw(pRenderer);
 
-	//calling on kelp2
-	kelp2.draw(pRenderer);
-
-	//animation
-	renderAni.draw(pRenderer);
 
 	//show the back buffer
 	SDL_RenderPresent(pRenderer);
 }
-	
- 
-/**
- * \brief Program Entry Point
- */
+
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////Cleanup////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void Cleanup()
+{
+
+	for (Bullet& bullets : bulletContainer)
+	{
+		bullets.sprite.Cleanup();
+	}
+	for (Bullet& bullets : enemyBulletContainer)
+	{
+		bullets.sprite.Cleanup();
+	}
+	for (Ship& bullets : enemyContainer)
+	{
+		bullets.sprite.Cleanup();
+	}
+
+	movingPlayerShip.sprite.Cleanup();
+
+	Mix_FreeChunk(sfxPlayerShoot);
+	Mix_FreeMusic(bgmDefault);
+	Mix_CloseAudio();
+	SDL_DestroyRenderer(pRenderer);
+	SDL_DestroyWindow(pWindow);
+	SDL_Quit();
+
+}
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////Main////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
 int main(int argc, char* args[])
 {
 
@@ -830,8 +901,10 @@ int main(int argc, char* args[])
 
 	load();
 
+	Start();
+
 	//show back buffer which we have been drawing to prior. this is part of a common rendering tech called double buffering.
-	SDL_RenderPresent(pRenderer);
+	//SDL_RenderPresent(pRenderer);
 
 
 	// Main Game Loop, each iteration of the loop is one frame of the game
@@ -844,7 +917,7 @@ int main(int argc, char* args[])
 		Input();    //input from player
 		Update();   //update game state
 		Draw();     //draw to screen
-		
+
 		if (const float frame_time = static_cast<float>(SDL_GetTicks()) - frame_start; //statement excecuted before if statement
 			frame_time < DELAY_TIME) //if statement condition (if we completed our input-update-draw in less than target time
 		{
@@ -854,10 +927,12 @@ int main(int argc, char* args[])
 
 		// delta time
 		const auto delta_time = (static_cast<float>(SDL_GetTicks()) - frame_start) / 1000.0f;
-		
-	
+
+
 	}
+
+	Cleanup();
+
 	getchar();
 	return 0;
 }
-
