@@ -14,6 +14,8 @@ constexpr float FPS = 60.0f; // target frames per second
 constexpr float DELAY_TIME = 1000.0f / FPS; // target time between frames in ms
 const int WINDOW_WIDTH = 1200;
 const int WINDOW_HEIGHT = 600;
+const int TOTAL_PARTICLES = 10;
+int playerHitCount = 0;
 float deltaTime = 1.0f / FPS;
 
 bool isGameRunning = true;
@@ -246,6 +248,7 @@ namespace ye
 		Sprite sprite;
 		float movesSpeedPx = 100;
 		float fireRepeatDelay = 0.5f;
+		int health;
 
 
 	private:
@@ -358,7 +361,6 @@ namespace ye
 		};
 
 
-
 		void Update()
 		{
 			fireRepeatTimer -= deltaTime;
@@ -370,6 +372,7 @@ namespace ye
 		}
 
 	};
+
 
 
 	// Part of AABB collision detection. 
@@ -403,7 +406,7 @@ using namespace ye;
 Enemy enemyShip;
 std::vector<Enemy> enemyContainer;
 std::vector<Bullet> enemyBulletContainer;
-float enemySpawnDelay = 2.0f;
+float enemySpawnDelay = 3.0f;
 float enemySpawnTimer = 0.0f;
 
 //character bullets
@@ -413,12 +416,15 @@ std::vector<Bullet> bulletContainer;
 
 Sprite backgroundImage;
 Sprite backgroundImage2;
+
+
 Ship movingPlayerShip;
 //Ship playerShip;
 
 Sprite kelp;
 Sprite rock1;
 Sprite lighthouse;
+
 
 Sprite newSprite;
 
@@ -432,7 +438,12 @@ int audioVolumeCurrent = MIX_MAX_VOLUME;
 //score on screen...UI
 TTF_Font* uiFont;
 int currentScore = 0;
+int enemyScore = 0;
 Sprite scoreSprite;
+Sprite enemyScoreSprite;
+
+Sprite youLose;
+
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////Init////////////////////////////////////////////////////////////
@@ -534,12 +545,6 @@ void load()
 
 	movingPlayerShip.sprite = Sprite(pRenderer, "../Assets/textures/ship2.png", playerWidth, playerHeight, playerCount);
 
-	/*Vec2 playerSize = movingPlayerShip.sprite.getSize();
-	int playerWidth2 = movingPlayerShip.sprite.position.x * 2;
-	int playerHeight2 = movingPlayerShip.sprite.position.y * 2;
-
-	movingPlayerShip.sprite.setSize(playerWidth2, playerHeight2);*/
-
 	movingPlayerShip.sprite.position.x = (WINDOW_WIDTH / 8); //start with left eighth
 	movingPlayerShip.sprite.position.y = (WINDOW_HEIGHT / 2); // in middle
 
@@ -614,7 +619,7 @@ bool isBackPressed = false;
 //const float playerSpeedPx = 600.0f; //pixels per second
 //const float playerShootCoolDownDuration = 0.1f; // time between shots
 //float playerShootCoolDownTimer = 0.0f; //determines when we can shoot again
-int bulletSpeed = 600.0f;
+int bulletSpeed = 630.0f;
 
 void Input()
 {
@@ -716,7 +721,7 @@ void Input()
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////Update////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void UpdatePlayer()
 {
@@ -767,8 +772,6 @@ void UpdatePlayer()
 
 		//play sound
 		Mix_PlayChannel(-1, sfxPlayerShoot, 0);
-
-
 	}
 
 	movingPlayerShip.Move(inputVector);
@@ -806,6 +809,10 @@ void EnemySpawner()
 
 	enemySpawnTimer = enemySpawnDelay;
 
+	enemyShip.Update();
+
+	enemyShip.sprite.UpdateAnimation();
+
 }
 
 void AddScore(int scoreToAdd)
@@ -813,29 +820,85 @@ void AddScore(int scoreToAdd)
 	currentScore += scoreToAdd;
 }
 
+void EnemyAddScore(int enemyScoreToAdd)
+{
+	enemyScore += enemyScoreToAdd;
+}
+
+void ResetGame() 
+{
+	// Reset player position and rotation
+	movingPlayerShip.sprite.position = { WINDOW_WIDTH / 8, WINDOW_HEIGHT / 2 };
+	movingPlayerShip.sprite.rotationDegrees = 0.0f;
+
+	// Clear enemy ships and bullets
+	bulletContainer.clear();
+	enemyContainer.clear();
+	enemyBulletContainer.clear();
+
+	// Reset score
+	AddScore(0);
+
+	EnemyAddScore(0);
+
+	// Reset game over state
+	isGameRunning = true;
+
+}
+
 void detectCollisions()
 {
 
 	Sprite& playerSprite = movingPlayerShip.sprite;
 
-	//std::vector<Bullet>::iterator
+	
+
 	for (auto it = enemyBulletContainer.begin(); it != enemyBulletContainer.end();)
 	{
 		Sprite& bulletSprite = it->sprite;
 
 		if (AreSpritesColliding(playerSprite, bulletSprite))
 		{
-			movingPlayerShip.sprite.rotationDegrees += 10;
+			EnemyAddScore(1);
+			// Increment the hit count and check if the player has lost
+
+			playerHitCount++;
+
+
+			if (playerHitCount >= 2)
+			{
+				// Display a message to the player
+				SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Game Over", "You lost!", NULL);
+
+				// Reset the hit count and restart the game
+				playerHitCount = 0;
+
+				// Add code here to restart the game
+				//ResetGame();
+
+			}
 
 			//destroy the bullet
 			it = enemyBulletContainer.erase(it);
-
 		}
 		else
 		{
 			it++;
 		}
 	}
+
+		//if (AreSpritesColliding(playerSprite, bulletSprite))
+		//{
+		//	movingPlayerShip.sprite.rotationDegrees += 10;
+
+		//	EnemyAddScore(1);
+		//	
+		//	//destroy the bullet
+		//	it = enemyBulletContainer.erase(it);
+
+
+		//}
+	
 
 	//player bullets vs enemy ship
 
@@ -977,7 +1040,8 @@ void Draw()
 	// calling on lighthouse
 	lighthouse.draw(pRenderer);
 
-	//this is for the text
+
+	//this is for the text for adding player hits
 	//uiSprite = Sprite(uiFont, scoreText, color);
 	//the + op has been overridden for string + string to slap em tg
 	std::string scoreText = "Score: " + std::to_string(currentScore);
@@ -990,9 +1054,38 @@ void Draw()
 
 	scoreSprite.draw(pRenderer);
 
+	////////////////////
+	//for enemies hits
 
+	std::string enemyText = "Enemy Hits: " + std::to_string(enemyScore);
+	SDL_Color eColor = { 255, 255, 255, 255 };
+
+	enemyScoreSprite.Cleanup();
+
+	enemyScoreSprite = Sprite(pRenderer, uiFont, enemyText.c_str(), eColor);
+	enemyScoreSprite.setPosition(700, 50);
+
+	enemyScoreSprite.draw(pRenderer);
+
+	////////////////////
+//for if player losses
+
+	if (playerHitCount >= 5)
+	{
+		std::string youLoseText = "YOU LOSE!";
+		SDL_Color yLColor = { 255, 0, 0};
+
+		youLose.Cleanup();
+
+		youLose = Sprite(pRenderer, uiFont, youLoseText.c_str(), yLColor);
+		youLose.setPosition(450, 300);
+
+		youLose.draw(pRenderer);
+
+	}
 	//show the back buffer
 	SDL_RenderPresent(pRenderer);
+
 }
 
 
@@ -1084,5 +1177,7 @@ int main(int argc, char* args[])
 	Cleanup();
 
 	getchar();
+
+
 	return 0;
 }
