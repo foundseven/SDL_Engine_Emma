@@ -834,15 +834,15 @@ void ResetGame()
 	// Clear enemy ships and bullets
 	bulletContainer.clear();
 	enemyContainer.clear();
-	enemyBulletContainer.clear();
+	//enemyBulletContainer.clear();
 
 	// Reset score
-	AddScore(0);
+	currentScore = 0;
 
-	EnemyAddScore(0);
+	enemyScore = 0;
 
-	// Reset game over state
-	isGameRunning = true;
+	playerHitCount = 0;
+
 
 }
 
@@ -859,13 +859,20 @@ void detectCollisions()
 
 		if (AreSpritesColliding(playerSprite, bulletSprite))
 		{
+			//add the enemy score
 			EnemyAddScore(1);
+			
 			// Increment the hit count and check if the player has lost
-
 			playerHitCount++;
 
+			//rotate the ship
+			movingPlayerShip.sprite.rotationDegrees += 10;
 
-			if (playerHitCount >= 2)
+			//destroy the bullet
+			it = enemyBulletContainer.erase(it);
+
+
+			if (playerHitCount >= 10)
 			{
 				// Display a message to the player
 				SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Game Over", "You lost!", NULL);
@@ -874,12 +881,10 @@ void detectCollisions()
 				playerHitCount = 0;
 
 				// Add code here to restart the game
-				//ResetGame();
+				ResetGame();
 
 			}
-
-			//destroy the bullet
-			it = enemyBulletContainer.erase(it);
+			
 		}
 		else
 		{
